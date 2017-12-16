@@ -1,11 +1,11 @@
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.{SparkConf, SparkContext}
 import java.io._
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.graphx.{Edge, Graph}
+import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.io.Source
 import scala.util.parsing.json.JSON
-import scala.io._
 
 class SimpleCSVHeader(header: Array[String]) extends Serializable {
   val index = header.zipWithIndex.toMap
@@ -14,6 +14,14 @@ class SimpleCSVHeader(header: Array[String]) extends Serializable {
 }
 
 object GraphBuild {
+  def makeArray(value: List[(Int, Float)]): Array[Float] = {
+    val x = Array.fill[Float](24)(Float.MaxValue)
+    for (v <- value) {
+      x(v._1) = v._2
+    }
+    x
+  }
+
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.OFF)
     Logger.getLogger("akka").setLevel(Level.OFF)
@@ -32,7 +40,12 @@ object GraphBuild {
     val header = new SimpleCSVHeader(data.take(1)(0))
     // filter the header out
     val edge_rows = data.filter(line => header(line, "dstid") != "dstid")
-      .map(row => Edge(header(row, "sourceid").toLong, header(row, "dstid").toLong, row.slice(2, 7)))
+      .map(row => ((row(0), row(1)), (row(2).toInt, row(3).toFloat)))
+      .groupByKey()
+      .mapValues(value => makeArray(value.toList))
+      .map(row => Edge(row._1._1.toLong, row._1._2.toLong, row._2))
+
+
 
     // getting only dstIds
     //val dstIds = edge_rows.map(row => header(row,"dstid"))
@@ -61,12 +74,14 @@ object GraphBuild {
             .asInstanceOf[List[List[List[List[Float]]]]]
         )))
 
-    println(movements_rdd.collect()(0))
+    //println(movements_rdd.collect()(0))
 
     val graph = Graph(movements_rdd, edge_rows)
-    //println(graph.numEdges)
-    //println(graph.numVertices)
-    println(graph.edges.take(1)(0).attr.mkString(" "))
+    println(graph.numEdges)
+    println(graph.numVertices)
+    //println(graph.vertices.map(vprop => (vprop._1, vprop._2._1)).take(1)(0))
+    //println(graph.edges.take(1)(0).attr.mkString(" "))
+
     sc.stop()
   }
 }
