@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 12.5px sans-serif;
+}
+
+path {
+  stroke-width: 1px;
+  stroke: white;
+  
+  cursor: pointer;
+}
+
+path:hover, path.highlighted {
+  fill: DodgerBlue ;
+}
+
+div.tooltip {
+  position: absolute;
+  background-color: white;
+  border: 1px solid black;
+  color: black;
+  font-weight: bold;
+  padding: 4px 8px;
+  display: none;
+}
+
+path.line {
+fill: none;
+stroke:#000;
+}
+ #wrapper{
+    
+    overflow:auto;
+}
+
+#c1{
+   
+   float:left;
+   
+}
+
+#c2{
+    
+    float:right;
+	padding: 0px 50px;
+}​
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<div id="wrapper">
+<div id="c2">
+
+<table style="width:100%">
+  
+  <tr>
+    <td><input type="radio" id="contactChoice1"
+     name="contact" value="email" onchange="setRow1(1)">
+    <label for="contactChoice1">Crime</label></td>
+    <td> <input type="radio" id="contactChoice2"
+     name="contact" value="phone" onchange="setRow1(2)">
+    <label for="contactChoice2">Fire accidents</label></td>
+    <td> <input type="radio" id="contactChoice3"
+     name="contact" value="mail" onchange="setRow1(3)">
+    <label for="contactChoice3">None</label></td>
+	<td><button type="submit" onclick="refresh()">Submit</button></td>
+  </tr>
+  <tr>
+    <td><input type="radio" id="contactChoice1"
+     name="contact1" value="email1" onchange="setRow2(1)>
+    <label for="contactChoice1">Police Stn</label></td>
+    <td> <input type="radio" id="contactChoice2"
+     name="contact1" value="phone" onchange="setRow2(2)>
+    <label for="contactChoice2">Hospital</label></td>
+    <td> <input type="radio" id="contactChoice3"
+     name="contact1" value="mail" onchange="setRow2(3)>
+    <label for="contactChoice3">Fire</label></td>
+	
+  </tr>
+  <tr>
+    <td><select  id="drop" onchange="dropdwn()">
+  <option value="volvo">Hour of the day</option>
+  <option value="saab">Day of the week</option>
+  <option value="opel">Month of the year</option>
+  
+</select></td>
+    <td>Input value: <input id="inputValue" type="text" name="inputVal" value="1" ></td>
+    
+	<td> </td>
+  </tr>
+</table>
+
+ 
+</div>
+
+
+<div id="c1">
+<script>
+
+values = []
+d3.text("data.txt", function(unparsedData)
+  {
+  //console.log(unparsedData.split(","));
+  
+    values = unparsedData.split(",").map(parseFloat);
+	init();
+	
+   });
+//init();
+var row1=1,row2=1,row3=0,row3Val=1;
+var originalHtml;
+function setRow1(i)
+{
+row1 = i-1; //1-crime 2-fire 3-none
+}
+
+function setRow2(i)
+{
+row2 = i-1; //1-crime 2-fire 3-none
+}
+
+
+function inputVal(element)
+{
+row3Val = element.innerText;
+
+
+}
+function dropdwn()
+{
+row3 = document.getElementById("drop").selectedIndex; //0-h,1-d,2-m
+}
+
+function refresh()
+{
+row3Val = document.getElementById("inputValue").value;
+document.body.innerHTML = originalHtml;
+document.getElementById("inputValue").value = row3Val;
+console.log(row1+" "+row2+" "+row3+" "+row3Val);
+draw();
+
+}
+function init()
+{
+// for(var i=0;i<=473*1200;i++)
+//	values.push(Math.random());
+   
+   //console.log(values);
+ console.log("initttt");
+ draw();
+ originalHtml = document.body.outerHTML;
+}
+
+function calculateOffset(num)
+{
+num = num -1;
+var ff=0;
+if(row3==0)//hour
+	ff = 7;
+if(row3==1) //d
+	ff = 0
+if(row3==2) //month
+	ff = 31
+var offset1 = 344*num+row1*43+ff+row3Val;
+var offset2 = 344*num + 2*43+row2*86+ff+row3Val;
+var v1=1;
+var v2=1;
+if(row1!=2)
+	v1 = values[offset1]*10;
+v2 = values[offset2];
+return v1*v2;
+//return 200;
+}
+
+
+function draw()
+{
+
+//Map dimensions (in pixels)
+var width = 1200,
+    height = 1000;
+
+//Map projection
+var projection = d3.geo.mercator()
+    .scale(17646.77816680187)
+    .center([-70.98175349999998,42.06762797532906]) //projection center
+    .translate([width/2-275,height/2-150]) //translate to center the map in view
+
+//Generate paths based on projection
+var path = d3.geo.path()
+    .projection(projection);
+
+//Create an SVG
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+//Group for the map features
+var features = svg.append("g")
+    .attr("class","features");
+
+//Create zoom/pan listener
+//Change [1,Infinity] to adjust the min/max zoom scale
+var zoom = d3.behavior.zoom()
+    .scaleExtent([1, Infinity])
+    .on("zoom",zoomed);
+
+svg.call(zoom);
+
+//Create a tooltip, hidden at the start
+var tooltip = d3.select("body").append("div").attr("class","tooltip");
+
+
+
+d3.json("boston_censustracts.geojson",function(error,geodata) {
+  if (error) return console.log(error); //unknown error, check the console
+
+  //Create a path for each map feature in the data
+  features.selectAll("path")
+    .data(geodata.features)
+    .enter()
+    .append("path")
+    .attr("d",path)
+	.attr("fill",fillColor )
+    .on("mouseover",showTooltip)
+    .on("mousemove",moveTooltip)
+    .on("mouseout",hideTooltip)
+    .on("click",clicked);
+
+});
+
+// Add optional onClick events for features here
+// d.properties contains the attributes (e.g. d.properties.name, d.properties.population)
+function clicked(d,i) {
+//show graph
+// Set the ranges
+var num = parseInt(d.properties.MOVEMENT_ID);
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul','Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+var hours =[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+var daydata =[];
+var hourdata=[];
+var monthdata = [];
+
+num = num -1;
+
+//var offset1 = 344*num+row1*43+ff;
+var offset2 = 344*num + 2*43+row2*86;
+
+//daydata = values.slice(offset2,offset2+7);
+//var daydata1 = values.slice(offset2+43,offset2+43+7);
+
+//hourdata = values.slice(offset2+7,offset2+7+24);
+//var hourdata1 = values.slice(offset2+7+43,offset2+7+43+7);
+
+//monthdata = values.slice(offset2+7+24,offset2+7+24+12);
+//var monthdata1 = values.slice(offset2+7+24+43,offset2+7+24+43+12);
+//day data
+for(var k=0;k<7;k++)
+	daydata.push({key:days[k%7],value:Math.random()});
+//hour data
+for(var k=0;k<24;k++)
+	hourdata.push({key:k%24,value:Math.random()});
+//month data
+for(var k=0;k<12;k++)
+	monthdata.push({key:months[k%12],value:Math.random()});
+
+//var data = []; 
+console.log(daydata)
+d3.select("#path1").remove();
+d3.select("#xaxis1").remove();
+d3.select("#yaxis1").remove();
+
+d3.select("#path2").remove();
+d3.select("#xaxis2").remove();
+d3.select("#yaxis2").remove();
+
+d3.select("#path3").remove();
+d3.select("#xaxis3").remove();
+d3.select("#yaxis3").remove();
+
+
+
+var x = d3.scale.ordinal().domain(days).rangePoints([0, 500]);
+var y = d3.scale.linear().range([200, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+// Define the line
+var valueline = d3.svg.line()
+    .x(function(d) { return x((d.key)) })
+    .y(function(d) { return y(parseFloat(d.value)); });
+
+
+	//x.domain(d3.extent(daydata,function(d){return parseInt(d.day);}));
+	//x.domain([0,6]);
+    y.domain(d3.extent(daydata,function(d){return parseFloat(d.value);}));
+
+	
+    // Add the valueline path.
+    svg.append("path")
+		.attr("id","path1")
+		.data([daydata])
+		.attr("transform", "translate(600," + 70 + ")")
+        .attr("class", "line")
+        .attr("d", valueline);
+
+    // Add the X Axis
+    svg.append("g")
+		.attr("id","xaxis1")
+        .attr("class", "x axis")
+        .attr("transform", "translate(600," + 270 + ")")
+        .call(xAxis);
+
+    // Add the Y Axis
+    svg.append("g")
+		.attr("id","yaxis1")
+        .attr("class", "y axis")
+		.attr("transform", "translate(600," + 70 + ")")
+        .call(yAxis);
+		
+		
+		// hour data--------------------------------------------------------------------------------------------
+		// Add the valueline path.
+var x = d3.scale.ordinal().domain(hours).rangePoints([0, 500]);
+var y = d3.scale.linear().range([200, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+// Define the line
+var valueline = d3.svg.line()
+    .x(function(d) { return x((d.key)) })
+    .y(function(d) { return y(parseFloat(d.value)); });
+
+
+	//x.domain(d3.extent(daydata,function(d){return parseInt(d.day);}));
+	//x.domain([0,6]);
+    y.domain(d3.extent(hourdata,function(d){return parseFloat(d.value);}));
+
+	
+    // Add the valueline path.
+    svg.append("path")
+		.attr("id","path2")
+		.data([hourdata])
+		.attr("transform", "translate(600," + 350 + ")")
+        .attr("class", "line")
+        .attr("d", valueline);
+
+    // Add the X Axis
+    svg.append("g")
+		.attr("id","xaxis2")
+        .attr("class", "x axis")
+        .attr("transform", "translate(600," + 550 + ")")
+        .call(xAxis);
+
+    // Add the Y Axis
+    svg.append("g")
+		.attr("id","yaxis2")
+        .attr("class", "y axis")
+		.attr("transform", "translate(600," + 350 + ")")
+        .call(yAxis);
+		
+		// month data--------------------------------------------------------------------------------------------
+		// Add the valueline path.
+var x = d3.scale.ordinal().domain(months).rangePoints([0, 500]);
+var y = d3.scale.linear().range([200, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+// Define the line
+var valueline = d3.svg.line()
+    .x(function(d) { return x((d.key)) })
+    .y(function(d) { return y(parseFloat(d.value)); });
+
+
+	//x.domain(d3.extent(daydata,function(d){return parseInt(d.day);}));
+	//x.domain([0,6]);
+    y.domain(d3.extent(monthdata,function(d){return parseFloat(d.value);}));
+
+	
+    // Add the valueline path.
+    svg.append("path")
+		.attr("id","path3")
+		.data([monthdata])
+		.attr("transform", "translate(600," + 570 + ")")
+        .attr("class", "line")
+        .attr("d", valueline);
+
+    // Add the X Axis
+    svg.append("g")
+		.attr("id","xaxis3")
+        .attr("class", "x axis")
+        .attr("transform", "translate(600," + 770 + ")")
+        .call(xAxis);
+
+    // Add the Y Axis
+    svg.append("g")
+		.attr("id","yaxis3")
+        .attr("class", "y axis")
+		.attr("transform", "translate(600," + 570 + ")")
+        .call(yAxis);
+		
+
+}
+
+function fillColor(d)
+{
+
+var num = parseInt(d.properties.MOVEMENT_ID)
+
+var out = calculateOffset(num);
+
+var r,g,b;
+var k = parseInt(out*100);
+if (k< 50) {
+    
+    g = Math.floor(255 * (k / 50));
+    r = 255
+
+  } else {
+    
+    g = 255;
+    r = Math.floor(255 * ((50-k%50)/50));
+  }
+  b =60;
+  
+  return d3.rgb(r,g,b);
+}
+
+//Update map on zoom/pan
+function zoomed() {
+  features.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")")
+      .selectAll("path").style("stroke-width", 1 / zoom.scale() + "px" );
+}
+
+
+//Position of the tooltip relative to the cursor
+var tooltipOffset = {x: 5, y: -25};
+
+//Create a tooltip, hidden at the start
+function showTooltip(d) {
+  moveTooltip();
+
+  tooltip.style("display","block")
+      .text(d.properties.MOVEMENT_ID+' '+d.properties.DISPLAY_NAME);
+	   
+}
+
+//Move the tooltip to track the mouse
+function moveTooltip() {
+  tooltip.style("top",(d3.event.pageY+tooltipOffset.y)+"px")
+      .style("left",(d3.event.pageX+tooltipOffset.x)+"px");
+}
+
+//Create a tooltip, hidden at the start
+function hideTooltip() {
+  tooltip.style("display","none");
+}
+}
+</script>
+</div>
+
+
+</div>
+
