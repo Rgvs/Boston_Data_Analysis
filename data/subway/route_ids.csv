@@ -1,0 +1,210 @@
+route_id,mode_name,route_name
+Green-B,Subway,Green Line B
+Green-C,Subway,Green Line C
+Green-D,Subway,Green Line D
+Green-E,Subway,Green Line E
+Mattapan,Subway,Mattapan Trolley
+Blue,Subway,Blue Line
+Orange,Subway,Orange Line
+Red,Subway,Red Line
+CR-Fairmount,Commuter Rail,Fairmount Line
+CR-Fitchburg,Commuter Rail,Fitchburg Line
+CR-Foxboro,Commuter Rail,Foxboro (Special Events)
+CR-Worcester,Commuter Rail,Framingham/Worcester Line
+CR-Franklin,Commuter Rail,Franklin Line
+CR-Greenbush,Commuter Rail,Greenbush Line
+CR-Haverhill,Commuter Rail,Haverhill Line
+CR-Kingston,Commuter Rail,Kingston/Plymouth Line
+CR-Lowell,Commuter Rail,Lowell Line
+CR-Middleborough,Commuter Rail,Middleborough/Lakeville Line
+CR-Needham,Commuter Rail,Needham Line
+CR-Newburyport,Commuter Rail,Newburyport/Rockport Line
+CR-Providence,Commuter Rail,Providence/Stoughton Line
+701,Bus,CT1
+747,Bus,CT2
+708,Bus,CT3
+741,Bus,Silver Line SL1
+742,Bus,Silver Line SL2
+751,Bus,Silver Line SL4
+749,Bus,Silver Line SL5
+746,Bus,Silver Line Waterfront
+1,Bus,1
+4,Bus,4
+5,Bus,5
+7,Bus,7
+8,Bus,8
+9,Bus,9
+10,Bus,10
+11,Bus,11
+14,Bus,14
+15,Bus,15
+16,Bus,16
+17,Bus,17
+18,Bus,18
+19,Bus,19
+21,Bus,21
+22,Bus,22
+23,Bus,23
+24,Bus,24
+2427,Bus,24/27
+26,Bus,26
+27,Bus,27
+28,Bus,28
+29,Bus,29
+30,Bus,30
+31,Bus,31
+32,Bus,32
+3233,Bus,32/33
+33,Bus,33
+34,Bus,34
+34E,Bus,34E
+35,Bus,35
+36,Bus,36
+37,Bus,37
+3738,Bus,37/38
+38,Bus,38
+39,Bus,39
+40,Bus,40
+4050,Bus,40/50
+41,Bus,41
+42,Bus,42
+43,Bus,43
+44,Bus,44
+45,Bus,45
+47,Bus,47
+50,Bus,50
+51,Bus,51
+52,Bus,52
+55,Bus,55
+57,Bus,57
+57A,Bus,57A
+59,Bus,59
+60,Bus,60
+62,Bus,62
+627,Bus,62/76
+64,Bus,64
+65,Bus,65
+66,Bus,66
+67,Bus,67
+68,Bus,68
+69,Bus,69
+70,Bus,70
+70A,Bus,70A
+71,Bus,71
+72,Bus,72
+725,Bus,72/75
+73,Bus,73
+74,Bus,74
+75,Bus,75
+76,Bus,76
+77,Bus,77
+78,Bus,78
+79,Bus,79
+80,Bus,80
+83,Bus,83
+84,Bus,84
+85,Bus,85
+86,Bus,86
+87,Bus,87
+88,Bus,88
+89,Bus,89
+8993,Bus,89/93
+90,Bus,90
+91,Bus,91
+92,Bus,92
+93,Bus,93
+94,Bus,94
+95,Bus,95
+96,Bus,96
+97,Bus,97
+99,Bus,99
+100,Bus,100
+101,Bus,101
+104,Bus,104
+105,Bus,105
+106,Bus,106
+108,Bus,108
+109,Bus,109
+110,Bus,110
+111,Bus,111
+112,Bus,112
+114,Bus,114
+116,Bus,116
+116117,Bus,116/117
+117,Bus,117
+119,Bus,119
+120,Bus,120
+121,Bus,121
+131,Bus,131
+132,Bus,132
+134,Bus,134
+136,Bus,136
+137,Bus,137
+170,Bus,170
+171,Bus,171
+195,Bus,195
+201,Bus,201
+202,Bus,202
+210,Bus,210
+211,Bus,211
+212,Bus,212
+214,Bus,214
+214216,Bus,214/216
+215,Bus,215
+216,Bus,216
+217,Bus,217
+220,Bus,220
+221,Bus,221
+222,Bus,222
+225,Bus,225
+230,Bus,230
+236,Bus,236
+238,Bus,238
+240,Bus,240
+245,Bus,245
+325,Bus,325
+326,Bus,326
+350,Bus,350
+351,Bus,351
+352,Bus,352
+354,Bus,354
+411,Bus,411
+424,Bus,424
+426,Bus,426
+428,Bus,428
+429,Bus,429
+430,Bus,430
+434,Bus,434
+435,Bus,435
+436,Bus,436
+439,Bus,439
+441,Bus,441
+441442,Bus,441/442
+442,Bus,442
+448,Bus,448
+449,Bus,449
+450,Bus,450
+451,Bus,451
+455,Bus,455
+456,Bus,456
+459,Bus,459
+465,Bus,465
+501,Bus,501
+502,Bus,502
+503,Bus,503
+504,Bus,504
+505,Bus,505
+553,Bus,553
+554,Bus,554
+556,Bus,556
+558,Bus,558
+710,Bus,710
+712,Bus,712
+713,Bus,713
+714,Bus,714
+716,Bus,716
+9701,Bus,9701
+9702,Bus,9702
+9703,Bus,9703
+Boat-F4,Boat,Charlestown Ferry
+Boat-F1,Boat,Hingham/Hull Ferry
