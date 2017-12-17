@@ -1,23 +1,33 @@
-import java.io._
-
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.graphx.{Edge, Graph}
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.parsing.json.JSON
 
-class SimpleCSVHeader(header: Array[String]) extends Serializable {
-  val index = header.zipWithIndex.toMap
-
-  def apply(array: Array[String], key: String): String = array(index(key))
-}
 
 object GraphBuild {
-  def makeArray(value: List[(Int, Float)]): Array[Float] = {
+  def makeArrayHour(value: List[(Int, Float)]): Array[Float] = {
     val x = Array.fill[Float](24)(Float.MaxValue)
     for (v <- value) {
       x(v._1) = v._2
+    }
+    x
+  }
+
+  def makeArrayWeek(value: List[(Int, Float)]): Array[Float] = {
+    val x = Array.fill[Float](7)(Float.MaxValue)
+    for (v <- value) {
+      x(v._1 - 1) = v._2
+    }
+    x
+  }
+
+  def makeArrayMonth(value: List[(Int, Float)]): Array[Float] = {
+    val x = Array.fill[Float](12)(Float.MaxValue)
+    for (v <- value) {
+      x(v._1 - 1) = v._2
     }
     x
   }
@@ -32,28 +42,54 @@ object GraphBuild {
     val sc = new SparkContext(conf)
 
     // reads hourly aggreagate
-    val csv = sc.textFile("./data/boston-censustracts-2016-1-All-HourlyAggregate.csv")
     // spliting by comman and trimming elements
-    val data = csv.map(line => line.split(",").map(elem => elem.trim))
-    // building our header with the first line,
-    // it is used to get data from the element without using index values like ._1 for source id
-    val header = new SimpleCSVHeader(data.take(1)(0))
-    // filter the header out
-    val edge_rows = data.filter(line => header(line, "dstid") != "dstid")
-      .map(row => ((row(0), row(1)), (row(2).toInt, row(3).toFloat)))
+
+    val csv_hour1 = sc.textFile("./data/boston-censustracts-2016-1-All-HourlyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
+    val csv_hour2 = sc.textFile("./data/boston-censustracts-2016-2-All-HourlyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
+
+    val data_hour = csv_hour1.union(csv_hour2)
+      .map(row => ((row(0), row(1), row(2).toInt), (row(3).toFloat, 1)))
+      .reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
+      .map(row => ((row._1._1, row._1._2), (row._1._3, row._2._1/row._2._2)))
       .groupByKey()
-      .mapValues(value => makeArray(value.toList))
-      .map(row => Edge(row._1._1.toLong, row._1._2.toLong, row._2))
+      .mapValues(value => makeArrayHour(value.toList))
+
+    val csv_week1 = sc.textFile("./data/boston-censustracts-2016-1-WeeklyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
+    val csv_week2 = sc.textFile("./data/boston-censustracts-2016-2-WeeklyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
+
+    val data_week = csv_week1.union(csv_week2)
+      .map(row => ((row(0), row(1), row(2).toInt), (row(3).toFloat, 1)))
+      .reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
+      .map(row => ((row._1._1, row._1._2), (row._1._3, row._2._1/row._2._2)))
+      .groupByKey()
+      .mapValues(value => makeArrayWeek(value.toList))
 
 
+    val csv_month1 = sc.textFile("./data/boston-censustracts-2016-1-All-MonthlyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
+    val csv_month2 = sc.textFile("./data/boston-censustracts-2016-2-All-MonthlyAggregate.csv")
+      .map(line => line.split(",").map(elem => elem.trim))
+      .filter(line => line(1) != "dstid")
 
-    // getting only dstIds
-    //val dstIds = edge_rows.map(row => header(row,"dstid"))
-    // getting map from source ids to dst ids
-    //val sourceToDst = edge_rows.map(row => header(row,"sourceid").toInt -> header(row,"dstid").toInt)
+    val data_month = csv_month1.union(csv_month2)
+      .map(row => ((row(0), row(1), row(2).toInt), (row(3).toFloat, 1)))
+      .reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
+      .map(row => ((row._1._1, row._1._2), (row._1._3, row._2._1/row._2._2)))
+      .groupByKey()
+      .mapValues(value => makeArrayMonth(value.toList))
 
-    //println(dstIds.collect()(2))
-    //println(sourceToDst.collect()(2))
+    val data_edge = data_month.join(data_hour).join(data_week)
+      .map(row => Edge(row._1._1.toLong, row._1._2.toLong, (row._2._1._1, row._2._1._2, row._2._2)))
+
 
     // getting vertex data from boundaries file
     val raw_movements = Source.fromFile("./data/boston_censustracts.json").getLines.mkString
@@ -63,22 +99,41 @@ object GraphBuild {
       .get.asInstanceOf[Map[String, Any]]("features")
       .asInstanceOf[List[Map[String, Any]]]
 
-    // parallizing the vertex data and tranforming into a tuple of (movement_id, display_name, coordinates)
+    // parallizing the vertex data and tranforming into a tuple of (movement_id, display_name)
     // display name is the street name,
     // coordinates are of multi polygon
     val movements_rdd = sc.parallelize(movements)
       .map(feature => (
         feature("properties").asInstanceOf[Map[String, Any]]("MOVEMENT_ID").asInstanceOf[String].toLong,
-        (feature("properties").asInstanceOf[Map[String, Any]]("DISPLAY_NAME").asInstanceOf[String],
-          feature("geometry").asInstanceOf[Map[String, Any]]("coordinates")
-            .asInstanceOf[List[List[List[List[Float]]]]]
-        )))
+        feature("properties").asInstanceOf[Map[String, Any]]("DISPLAY_NAME").asInstanceOf[String]))
 
-    //println(movements_rdd.collect()(0))
+    val filename = "data/police_fire_hospital_combined.txt"
 
-    val graph = Graph(movements_rdd, edge_rows)
-    println(graph.numEdges)
-    println(graph.numVertices)
+    val police_fire_data: ListBuffer[Any] = ListBuffer()
+
+    for (line <- Source.fromFile(filename).getLines) {
+      police_fire_data += JSON.parseFull(line)
+    }
+
+    val police_fire_data_rdd = sc.parallelize(police_fire_data)
+      .map({case Some(line) => line.asInstanceOf[Map[String, Any]]})
+      .map(line => (line("id").asInstanceOf[Double].toLong,
+        (line("police").asInstanceOf[Boolean],
+          line("fire_stations").asInstanceOf[Boolean],
+          line("hospital").asInstanceOf[Boolean])))
+
+    println(police_fire_data_rdd.take(1)(0))
+
+    val nodes = movements_rdd.join(police_fire_data_rdd)
+    println(nodes.collect()(0))
+
+    val graph = Graph(nodes, data_edge)
+    graph.vertices.saveAsObjectFile("data/vertices")
+    graph.edges.saveAsObjectFile("data/edges")
+
+    //val hospitals = graph.vertices.filter(vertex => vertex._2._2._3).map(vertex => vertex._1).collect().toSeq
+
+    //val h_graph = ShortestPaths.run(graph, hospitals)
     //println(graph.vertices.map(vprop => (vprop._1, vprop._2._1)).take(1)(0))
     //println(graph.edges.take(1)(0).attr.mkString(" "))
 
